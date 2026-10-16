@@ -57,7 +57,7 @@ Options: `--lang en|fr`, `--format text|json|md`, and for `lint` `--fail-on erro
 python -m unittest discover -s tests
 ```
 
-18 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
+20 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
 
 ## Extending
 

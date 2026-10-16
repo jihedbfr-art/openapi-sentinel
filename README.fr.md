@@ -57,7 +57,7 @@ Options : `--lang en|fr`, `--format text|json|md`, et pour `lint` `--fail-on err
 python -m unittest discover -s tests
 ```
 
-18 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
+20 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
 
 ## Étendre
 

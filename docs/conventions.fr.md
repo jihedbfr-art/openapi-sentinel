@@ -32,7 +32,7 @@ Les schémas de charge d'événement (noms finissant par `Event`) ne suivent pas
 
 ## Une comparaison réelle
 
-`diff` entre [TMF620 4.0.0](https://github.com/tmforum-apis/TMF620_ProductCatalog/blob/24e69f3026f2b514baa27d7206540fc7b55bcb45/TMF620-ProductCatalog-v4.0.0.swagger.json) et 4.1.0 (même commit) ne signale aucune rupture, lu le 2026-10-16. Une comparaison brute indépendante des deux fichiers JSON concorde : aucun chemin supprimé, aucun type de propriété modifié, et les 38 propriétés disparues sont toutes dans des schémas de requête dont le nom finit par `_Update`, que `diff` ne signale volontairement pas.
+`diff` entre [TMF620 4.0.0](https://github.com/tmforum-apis/TMF620_ProductCatalog/blob/24e69f3026f2b514baa27d7206540fc7b55bcb45/TMF620-ProductCatalog-v4.0.0.swagger.json) et 4.1.0 (même commit), lu le 2026-10-16, renvoie 108 lignes sur 22 opérations, toutes des champs de réponse imbriqués : `@type`, `@baseType` et `@schemaLocation` ou `targetServiceSchema` n'apparaissent plus dans certains objets référencés, et quelques valeurs numériques ont changé de type (par exemple `productOfferingTerm.duration.amount`, car l'objet référencé est passé de `Quantity` à `Duration`). Aucun chemin ni aucune opération n'a été supprimé. La première version de l'outil avait tout manqué, car elle ne regardait que les champs de premier niveau ; c'est une comparaison brute des deux fichiers qui l'a révélé, et les champs imbriqués sont maintenant couverts par des tests. L'importance de ces changements dépend du consommateur : c'est une liste à examiner, pas un verdict.
 
 ## Ce que cela n'établit pas
 

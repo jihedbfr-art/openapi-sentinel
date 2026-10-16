@@ -32,7 +32,7 @@ Event payload schemas (names ending in `Event`) do not follow the entity pattern
 
 ## A real comparison
 
-`diff` between [TMF620 4.0.0](https://github.com/tmforum-apis/TMF620_ProductCatalog/blob/24e69f3026f2b514baa27d7206540fc7b55bcb45/TMF620-ProductCatalog-v4.0.0.swagger.json) and 4.1.0 (same commit) reports no breaking change, read 2026-10-16. A separate raw comparison of the two JSON files agrees: no path removed, no property type changed, and the 38 properties that disappeared are all in request schemas whose names end in `_Update`, which `diff` deliberately does not report.
+`diff` between [TMF620 4.0.0](https://github.com/tmforum-apis/TMF620_ProductCatalog/blob/24e69f3026f2b514baa27d7206540fc7b55bcb45/TMF620-ProductCatalog-v4.0.0.swagger.json) and 4.1.0 (same commit), read 2026-10-16, reports 108 lines over 22 operations, all nested response fields: `@type`, `@baseType` and `@schemaLocation` or `targetServiceSchema` no longer appear inside some referenced objects, and a few numeric values changed type (for example `productOfferingTerm.duration.amount`, because the referenced object changed from `Quantity` to `Duration`). No path or operation was removed. The first release of this tool missed all of it because it only looked at top-level fields; a raw comparison of the two files is what exposed that, and nested fields are now covered by tests. Whether these changes matter depends on the consumer: this is a list to review, not a verdict.
 
 ## What this does not establish
 

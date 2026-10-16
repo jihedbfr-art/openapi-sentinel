@@ -80,13 +80,35 @@ class DiffTests(unittest.TestCase):
         got = {(c.rule, c.where, c.detail) for c in compare(load(FIX / "offer-api-v1.json"), load(FIX / "offer-api-v2.json"))}
         self.assertEqual(got, {("D001", "/hub", ""), ("D003", "POST /offer", "body.credits"),
                                ("D004", "GET /offer/{id}", "200"), ("D005", "POST /offer", "201 credits"),
-                               ("D006", "POST /offer", "201 name: string -> integer")})
+                               ("D005", "GET /offer", "200 [].credits"),
+                               ("D006", "POST /offer", "201 name: string -> integer"),
+                               ("D006", "GET /offer", "200 [].name: string -> integer")})
 
     def test_additive_change_is_not_breaking(self):
         old = load(FIX / "offer-api.json")
         new = copy.deepcopy(old)
         new["definitions"]["Offer"]["properties"]["colour"] = {"type": "string"}
         new["paths"]["/extra"] = {"get": {"operationId": "x", "responses": {"200": {"description": "ok"}}}}
+        self.assertEqual(compare(old, new), [])
+
+    def test_nested_and_collection_response_fields_are_compared(self):
+        old = load(FIX / "offer-api.json")
+        old["definitions"]["Offer"]["properties"]["owner"] = {"$ref": "#/definitions/Owner"}
+        old["definitions"]["Owner"] = {"type": "object", "properties": {"email": {"type": "string"}, "tags": {
+            "type": "array", "items": {"type": "object", "properties": {"label": {"type": "string"}}}}}}
+        new = copy.deepcopy(old)
+        del new["definitions"]["Owner"]["properties"]["email"]
+        del new["definitions"]["Owner"]["properties"]["tags"]["items"]["properties"]["label"]
+        got = {c.detail for c in compare(old, new) if c.rule == "D005"}
+        self.assertIn("200 [].owner.email", got)  # GET /offer returns an array of Offer
+        self.assertIn("200 owner.email", got)     # GET /offer/{id} returns one Offer
+        self.assertIn("200 [].owner.tags[].label", got)
+
+    def test_required_field_nested_in_optional_object_is_not_a_new_required_input(self):
+        old = load(FIX / "offer-api.json")
+        old["definitions"]["OfferCreate"]["properties"]["contact"] = {"type": "object", "properties": {"mail": {"type": "string"}}}
+        new = copy.deepcopy(old)
+        new["definitions"]["OfferCreate"]["properties"]["contact"]["required"] = ["mail"]
         self.assertEqual(compare(old, new), [])
 
     def test_removed_operation_with_path_kept(self):
@@ -137,7 +159,7 @@ class LoadAndCliTests(unittest.TestCase):
     def test_cli_json_and_french(self):
         _, out, _ = self.run_cli("--format", "json", "--lang", "fr", "diff", str(FIX / "offer-api-v1.json"), str(FIX / "offer-api-v2.json"))
         data = json.loads(out)
-        self.assertEqual(len(data), 5)
+        self.assertEqual(len(data), 7)
         self.assertIn("chemin supprimé", {d["message"] for d in data})
 
 

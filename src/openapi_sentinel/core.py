@@ -91,11 +91,34 @@ def properties(doc, schema, _seen=None, _depth=0):
     required = set(schema.get("required") or []) if isinstance(schema.get("required"), list) else set()
     for name, sub in (schema.get("properties") or {}).items():
         sub_resolved = resolve(doc, sub)
-        out[name] = {"type": sub_resolved.get("type") or ("object" if sub_resolved.get("properties") else "?"),
-                     "required": name in required}
+        out[name] = {"type": sub_resolved.get("type") or ("object" if sub_resolved.get("properties") or sub_resolved.get("allOf") else "?"),
+                     "required": name in required, "schema": sub}
     for name in required:
         if name in out:
             out[name]["required"] = True
+    return out
+
+
+def deep_properties(doc, schema, prefix="", _path=frozenset(), _depth=0):
+    """Like properties(), but descends into nested objects (a.b) and arrays of objects (a[].b)."""
+    out = {}
+    if _depth > 8:
+        return out
+    top = resolve(doc, schema)
+    if top.get("type") == "array" and isinstance(top.get("items"), dict):  # a collection: look at one element
+        return deep_properties(doc, top["items"], prefix + "[].", _path, _depth + 1)
+    for name, meta in properties(doc, schema).items():
+        key = prefix + name
+        out[key] = {"type": meta["type"], "required": meta["required"]}
+        node = meta["schema"]
+        child_prefix = key + "."
+        if isinstance(node, dict) and resolve(doc, node).get("type") == "array":
+            node = resolve(doc, node).get("items", {})
+            child_prefix = key + "[]."
+        ref = node.get("$ref") if isinstance(node, dict) else None
+        if ref in _path:
+            continue
+        out.update(deep_properties(doc, node, child_prefix, _path | ({ref} if ref else set()), _depth + 1))
     return out
 
 

@@ -1,7 +1,7 @@
 """Compare two versions of one API description and list changes that can break callers."""
 from dataclasses import dataclass
 
-from .core import operations, properties, resolve
+from .core import deep_properties, operations, resolve
 
 BREAKING = {
     "D001": ("path removed", "chemin supprimé"),
@@ -29,13 +29,13 @@ def _request_inputs(doc, op):
     for raw in op["parameters"]:
         p = resolve(doc, raw)
         if p.get("in") == "body":
-            for name, meta in properties(doc, p.get("schema", {})).items():
+            for name, meta in deep_properties(doc, p.get("schema", {})).items():
                 items[f"body.{name}"] = meta
         elif p.get("name"):
             items[f"{p.get('in', '?')}.{p['name']}"] = {"type": p.get("type") or "?", "required": bool(p.get("required"))}
     content = resolve(doc, op.get("requestBody", {})).get("content") or {}
     for media in content.values():
-        for name, meta in properties(doc, (media or {}).get("schema", {})).items():
+        for name, meta in deep_properties(doc, (media or {}).get("schema", {})).items():
             items[f"body.{name}"] = meta
         break
     return items
@@ -53,7 +53,7 @@ def _responses(doc, op):
             for media in (response.get("content") or {}).values():
                 schema = (media or {}).get("schema")
                 break
-        out[code] = properties(doc, schema or {})
+        out[code] = deep_properties(doc, schema or {})
     return out
 
 
@@ -73,7 +73,8 @@ def compare(old, new):
         other = new_ops[(path, method)]
         before, after = _request_inputs(old, op), _request_inputs(new, other)
         for key, meta in after.items():
-            if meta["required"] and not before.get(key, {}).get("required"):
+            top_level = not key.startswith("body.") or (key.count(".") == 1 and "[]" not in key)
+            if top_level and meta["required"] and not before.get(key, {}).get("required"):
                 changes.append(Change("D003", where, key))
             if key in before and before[key]["type"] != meta["type"] and "?" not in (before[key]["type"], meta["type"]):
                 changes.append(Change("D006", where, f"{key}: {before[key]['type']} -> {meta['type']}"))
