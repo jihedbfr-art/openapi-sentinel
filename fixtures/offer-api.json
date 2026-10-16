@@ -1,0 +1,185 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Synthetic Offer API",
+    "version": "1.0.0",
+    "description": "Invented example for tests."
+  },
+  "basePath": "/synthetic/offerManagement/v1/",
+  "paths": {
+    "/offer": {
+      "get": {
+        "operationId": "listOffer",
+        "summary": "List offers",
+        "parameters": [
+          {
+            "name": "fields",
+            "in": "query",
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "type": "integer"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "X-Total-Count": {
+                "type": "integer"
+              },
+              "X-Result-Count": {
+                "type": "integer"
+              }
+            },
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Offer"
+              }
+            }
+          },
+          "400": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createOffer",
+        "summary": "Create an offer",
+        "parameters": [
+          {
+            "name": "offer",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OfferCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/Offer"
+            }
+          },
+          "400": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/offer/{id}": {
+      "get": {
+        "operationId": "retrieveOffer",
+        "summary": "Get one offer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Offer"
+            }
+          },
+          "400": {
+            "description": "Error"
+          },
+          "404": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/hub": {
+      "post": {
+        "operationId": "registerListener",
+        "summary": "Register for notifications",
+        "parameters": [
+          {
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Registered"
+          },
+          "400": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Offer": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        },
+        "@type": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "credits": {
+          "type": "integer"
+        }
+      }
+    },
+    "OfferCreate": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "credits": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

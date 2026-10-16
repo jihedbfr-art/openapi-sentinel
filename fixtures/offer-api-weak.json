@@ -1,0 +1,136 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Synthetic Offer API",
+    "description": "Invented example for tests."
+  },
+  "basePath": "/synthetic/offerManagement/v1/",
+  "paths": {
+    "/offer": {
+      "get": {
+        "operationId": "listOffer",
+        "summary": "List offers",
+        "parameters": [
+          {
+            "name": "fields",
+            "in": "query",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "headers": {
+              "X-Total-Count": {
+                "type": "integer"
+              }
+            },
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Offer"
+              }
+            }
+          },
+          "400": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create an offer",
+        "parameters": [
+          {
+            "name": "offer",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OfferCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/Offer"
+            }
+          },
+          "400": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    },
+    "/offer/{id}": {
+      "get": {
+        "operationId": "listOffer",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Offer"
+            }
+          },
+          "400": {
+            "description": "Error"
+          },
+          "500": {
+            "description": "Error"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Offer": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "credits": {
+          "type": "integer"
+        }
+      }
+    },
+    "OfferCreate": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "credits": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
