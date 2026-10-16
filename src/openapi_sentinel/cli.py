@@ -10,6 +10,13 @@ from .rules import ERROR, WARN, lint
 
 PACK_GROUP = "openapi_sentinel.rule_packs"  # extension point: installed packs may add rule functions
 
+LABELS = {
+    "en": {"break": "BREAKING", "lint_head": "| Rule | Severity | Where | Message |", "diff_head": "| Rule | Where | Change |",
+           "none_lint": "No findings.", "none_diff": "No breaking change found."},
+    "fr": {"break": "RUPTURE", "lint_head": "| Règle | Gravité | Où | Message |", "diff_head": "| Règle | Où | Changement |",
+           "none_lint": "Aucun constat.", "none_diff": "Aucune rupture détectée."},
+}
+
 
 def _extra_rules():
     rules = []
@@ -26,14 +33,14 @@ def _emit_lint(findings, args):
         print(json.dumps([{"rule": f.rule, "severity": f.severity, "where": f.where,
                            "message": f.message(args.lang)} for f in findings], ensure_ascii=False, indent=2))
     elif args.format == "md":
-        print("| Rule | Severity | Where | Message |\n|---|---|---|---|")
+        print(LABELS[args.lang]["lint_head"] + "\n|---|---|---|---|")
         for f in findings:
             print(f"| {f.rule} | {f.severity} | `{f.where}` | {f.message(args.lang)} |")
     else:
         for f in findings:
             print(f"{f.severity.upper():5} {f.rule} {f.where}: {f.message(args.lang)}")
         if not findings:
-            print("No findings." if args.lang == "en" else "Aucun constat.")
+            print(LABELS[args.lang]["none_lint"])
 
 
 def _emit_diff(changes, args):
@@ -41,14 +48,14 @@ def _emit_diff(changes, args):
         print(json.dumps([{"rule": c.rule, "where": c.where, "detail": c.detail,
                            "message": c.message(args.lang)} for c in changes], ensure_ascii=False, indent=2))
     elif args.format == "md":
-        print("| Rule | Where | Change |\n|---|---|---|")
+        print(LABELS[args.lang]["diff_head"] + "\n|---|---|---|")
         for c in changes:
             print(f"| {c.rule} | `{c.where}` | {c.message(args.lang)} |")
     else:
         for c in changes:
-            print(f"BREAKING {c.rule} {c.where}: {c.message(args.lang)}")
+            print(f"{LABELS[args.lang]['break']} {c.rule} {c.where}: {c.message(args.lang)}")
         if not changes:
-            print("No breaking change found." if args.lang == "en" else "Aucune rupture détectée.")
+            print(LABELS[args.lang]["none_diff"])
 
 
 def main(argv=None):
@@ -74,6 +81,9 @@ def main(argv=None):
         return 1 if changes else 0
     except SentinelError as error:
         print(f"error: {error}", file=sys.stderr)
+        return 2
+    except (TypeError, AttributeError, KeyError, ValueError) as error:  # structure the checks cannot walk
+        print(f"error: malformed description ({type(error).__name__}: {error})", file=sys.stderr)
         return 2
 
 

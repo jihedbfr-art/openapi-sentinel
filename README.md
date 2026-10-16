@@ -27,7 +27,7 @@ PYTHONPATH=src python -m openapi_sentinel diff fixtures/offer-api-v1.json fixtur
 
 Or install it (`pip install .`) and use the `openapi-sentinel` command. JSON files work out of the box; YAML needs `pip install pyyaml`.
 
-Options: `--lang en|fr`, `--format text|json|md`, and for `lint` `--fail-on error|warn|never`. Exit codes: `0` clean, `1` findings (or breaking changes), `2` unreadable input.
+Options: `--lang en|fr` (messages and report labels; `--help` stays in English), `--format text|json|md`, and for `lint` `--fail-on error|warn|never` (default `error`). Exit codes: `lint` returns `0` when no finding reaches the `--fail-on` level (warnings and infos may still be printed) and `1` otherwise; `diff` returns `0` when it finds no breaking change and `1` otherwise; `2` means unreadable or malformed input.
 
 ## What it checks
 
@@ -49,7 +49,7 @@ Options: `--lang en|fr`, `--format text|json|md`, and for `lint` `--fail-on erro
 - Static checks on the description file only. Nothing is called, so behaviour of a running service is not tested.
 - Swagger 2.0 and OpenAPI 3.x are read; only local `$ref` pointers are followed.
 - The conventions are observations from five public files, summarised in [docs/conventions.md](docs/conventions.md). They are a starting point, not a standard. Run on those same five files, the tool reports five schemas (`Addressable` twice, `EntityValue`, `Place`, `Service`) that carry an `href` without an `@type`, and nothing else.
-- `diff` compares top-level and nested object properties, not `oneOf` variants or enum values. A field removed from a request body is not reported, although a strict server may reject callers that still send it.
+- `diff` compares top-level and nested object properties, not `oneOf`/`anyOf` variants or enum values, and a field turning optional or a narrower format are not reported. A field removed from a request body is not reported, although a strict server may reject callers that still send it.
 
 ## Tests
 
@@ -57,7 +57,7 @@ Options: `--lang en|fr`, `--format text|json|md`, and for `lint` `--fail-on erro
 python -m unittest discover -s tests
 ```
 
-20 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
+28 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
 
 ## Extending
 

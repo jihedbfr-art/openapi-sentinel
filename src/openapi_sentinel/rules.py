@@ -73,7 +73,8 @@ def s003_count_headers(doc):
     for path, method, op in operations(doc):
         if _is_collection_get(path, method):
             ok = resolve(doc, (op.get("responses") or {}).get("200", {}))
-            missing = sorted({"X-Total-Count", "X-Result-Count"} - set(ok.get("headers") or {}))
+            present = {str(h).lower() for h in (ok.get("headers") or {})}  # header names are case-insensitive
+            missing = sorted(h for h in ("X-Total-Count", "X-Result-Count") if h.lower() not in present)
             if ok and missing:
                 out.append(Finding("S003", WARN, f"GET {path}", (("missing", ", ".join(missing)),)))
     return out

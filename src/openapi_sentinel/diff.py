@@ -24,20 +24,36 @@ class Change:
         return (fr if lang == "fr" else en).format(detail=self.detail)
 
 
+def _media_schemas(media_map):
+    """(label, schema) for each media type; the JSON one (or the first) has an empty label."""
+    names = [m for m in media_map if isinstance(media_map[m], dict) or media_map[m] is None]
+    names.sort(key=lambda m: (m != "application/json",))
+    return [("" if k == 0 else f"<{m}>", (media_map[m] or {}).get("schema", {})) for k, m in enumerate(names)]
+
+
+def _parent(key):
+    base = key[:-2] if key.endswith("[]") else key
+    return base.rsplit(".", 1)[0] if "." in base else None
+
+
 def _request_inputs(doc, op):
     items = {}
     for raw in op["parameters"]:
         p = resolve(doc, raw)
         if p.get("in") == "body":
+            items["body"] = {"type": "object", "required": bool(p.get("required"))}
             for name, meta in deep_properties(doc, p.get("schema", {})).items():
                 items[f"body.{name}"] = meta
         elif p.get("name"):
-            items[f"{p.get('in', '?')}.{p['name']}"] = {"type": p.get("type") or "?", "required": bool(p.get("required"))}
-    content = resolve(doc, op.get("requestBody", {})).get("content") or {}
-    for media in content.values():
-        for name, meta in deep_properties(doc, (media or {}).get("schema", {})).items():
-            items[f"body.{name}"] = meta
-        break
+            kind = p.get("type") or resolve(doc, p.get("schema", {})).get("type") or "?"
+            items[f"{p.get('in', '?')}.{p['name']}"] = {"type": kind, "required": bool(p.get("required"))}
+    request = resolve(doc, op.get("requestBody", {}))
+    content = request.get("content") or {}
+    if content:
+        items["body"] = {"type": "object", "required": bool(request.get("required"))}
+    for label, schema in _media_schemas(content):
+        for name, meta in deep_properties(doc, schema).items():
+            items[f"body{label}.{name}"] = meta
     return items
 
 
@@ -48,12 +64,11 @@ def _responses(doc, op):
         if not code.startswith("2"):
             continue
         response = resolve(doc, raw)
-        schema = response.get("schema")
-        if schema is None:
-            for media in (response.get("content") or {}).values():
-                schema = (media or {}).get("schema")
-                break
-        out[code] = deep_properties(doc, schema or {})
+        if "schema" in response:
+            out[code] = deep_properties(doc, response["schema"] or {})
+        for label, schema in _media_schemas(response.get("content") or {}):
+            out[code + label] = deep_properties(doc, schema or {})
+        out.setdefault(code, {})
     return out
 
 
@@ -73,8 +88,9 @@ def compare(old, new):
         other = new_ops[(path, method)]
         before, after = _request_inputs(old, op), _request_inputs(new, other)
         for key, meta in after.items():
-            top_level = not key.startswith("body.") or (key.count(".") == 1 and "[]" not in key)
-            if top_level and meta["required"] and not before.get(key, {}).get("required"):
+            nested = key.startswith("body") and "." in key
+            known = not nested or key in before or _parent(key) in before  # a wholly new optional object may bring required children
+            if known and meta["required"] and not before.get(key, {}).get("required"):
                 changes.append(Change("D003", where, key))
             if key in before and before[key]["type"] != meta["type"] and "?" not in (before[key]["type"], meta["type"]):
                 changes.append(Change("D006", where, f"{key}: {before[key]['type']} -> {meta['type']}"))

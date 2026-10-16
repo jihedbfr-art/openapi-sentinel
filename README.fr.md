@@ -27,7 +27,7 @@ PYTHONPATH=src python -m openapi_sentinel --lang fr diff fixtures/offer-api-v1.j
 
 Ou installez-le (`pip install .`) et utilisez la commande `openapi-sentinel`. Le JSON fonctionne tel quel ; le YAML demande `pip install pyyaml`.
 
-Options : `--lang en|fr`, `--format text|json|md`, et pour `lint` `--fail-on error|warn|never`. Codes de sortie : `0` rien à signaler, `1` constats (ou ruptures), `2` entrée illisible.
+Options : `--lang en|fr` (messages et libellés du rapport ; `--help` reste en anglais), `--format text|json|md`, et pour `lint` `--fail-on error|warn|never` (défaut `error`). Codes de sortie : `lint` renvoie `0` quand aucun constat n'atteint le niveau `--fail-on` (des avertissements et infos peuvent quand même s'afficher) et `1` sinon ; `diff` renvoie `0` sans rupture et `1` sinon ; `2` signifie entrée illisible ou mal formée.
 
 ## Ce qui est contrôlé
 
@@ -49,7 +49,7 @@ Options : `--lang en|fr`, `--format text|json|md`, et pour `lint` `--fail-on err
 - Contrôles statiques du fichier de description uniquement. Rien n'est appelé : le comportement d'un service en marche n'est pas testé.
 - Swagger 2.0 et OpenAPI 3.x sont lus ; seules les références `$ref` locales sont suivies.
 - Les conventions sont des observations sur cinq fichiers publics, résumées dans [docs/conventions.fr.md](docs/conventions.fr.md). C'est un point de départ, pas une norme. Sur ces cinq mêmes fichiers, l'outil signale cinq schémas (`Addressable` deux fois, `EntityValue`, `Place`, `Service`) qui portent un `href` sans `@type`, et rien d'autre.
-- `diff` compare les propriétés d'objets (y compris imbriquées), pas les variantes `oneOf` ni les valeurs d'énumération. Un champ retiré d'un corps de requête n'est pas signalé, bien qu'un serveur strict puisse rejeter les appelants qui l'envoient encore.
+- `diff` compare les propriétés d'objets (y compris imbriquées), pas les variantes `oneOf`/`anyOf` ni les valeurs d'énumération, et ne signale ni un champ devenu facultatif ni un format plus étroit. Un champ retiré d'un corps de requête n'est pas signalé, bien qu'un serveur strict puisse rejeter les appelants qui l'envoient encore.
 
 ## Tests
 
@@ -57,7 +57,7 @@ Options : `--lang en|fr`, `--format text|json|md`, et pour `lint` `--fail-on err
 python -m unittest discover -s tests
 ```
 
-20 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
+28 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
 
 ## Étendre
 

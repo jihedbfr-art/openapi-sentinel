@@ -57,6 +57,11 @@ class LintTests(unittest.TestCase):
                "components": {"schemas": {}}}
         self.assertEqual(lint(doc), [])
 
+    def test_count_header_names_are_case_insensitive(self):
+        doc = load(FIX / "offer-api.json")
+        doc["paths"]["/offer"]["get"]["responses"]["200"]["headers"] = {"x-total-count": {}, "X-result-count": {}}
+        self.assertEqual(lint(doc), [])
+
     def test_extra_rule_functions_are_run(self):
         extra = lambda doc: [Finding("S007", "info", "custom")]  # noqa: E731
         self.assertEqual(len(lint(load(FIX / "offer-api.json"), [extra])), 1)
@@ -104,12 +109,66 @@ class DiffTests(unittest.TestCase):
         self.assertIn("200 owner.email", got)     # GET /offer/{id} returns one Offer
         self.assertIn("200 [].owner.tags[].label", got)
 
-    def test_required_field_nested_in_optional_object_is_not_a_new_required_input(self):
+    def test_nested_field_becoming_required_is_reported(self):
         old = load(FIX / "offer-api.json")
         old["definitions"]["OfferCreate"]["properties"]["contact"] = {"type": "object", "properties": {"mail": {"type": "string"}}}
         new = copy.deepcopy(old)
         new["definitions"]["OfferCreate"]["properties"]["contact"]["required"] = ["mail"]
+        self.assertEqual([(c.rule, c.detail) for c in compare(old, new)], [("D003", "body.contact.mail")])
+
+    def test_new_optional_object_with_required_child_is_not_reported(self):
+        old = load(FIX / "offer-api.json")
+        new = copy.deepcopy(old)
+        new["definitions"]["OfferCreate"]["properties"]["contact"] = {"type": "object", "required": ["mail"], "properties": {"mail": {"type": "string"}}}
         self.assertEqual(compare(old, new), [])
+
+    def test_request_body_becoming_required_is_reported(self):
+        old = {"openapi": "3.0.3", "paths": {"/x": {"post": {"requestBody": {"content": {"application/json": {"schema": {"type": "object"}}}}, "responses": {}}}}}
+        new = copy.deepcopy(old)
+        new["paths"]["/x"]["post"]["requestBody"]["required"] = True
+        self.assertEqual([c.detail for c in compare(old, new)], ["body"])
+
+    def test_type_changes_in_scalars_arrays_dictionaries_and_parameters(self):
+        def swap(doc, getter):
+            new = copy.deepcopy(doc)
+            getter(new)["type"] = "integer"
+            return new
+        cases = [
+            ({"openapi": "3.0.3", "paths": {"/x": {"get": {"parameters": [{"name": "q", "in": "query", "schema": {"type": "string"}}], "responses": {}}}}},
+             lambda d: d["paths"]["/x"]["get"]["parameters"][0]["schema"], "query.q"),
+            ({"swagger": "2.0", "paths": {"/x": {"get": {"responses": {"200": {"description": "ok", "schema": {"type": "string"}}}}}}},
+             lambda d: d["paths"]["/x"]["get"]["responses"]["200"]["schema"], "(root)"),
+            ({"swagger": "2.0", "paths": {"/x": {"get": {"responses": {"200": {"description": "ok", "schema": {"type": "array", "items": {"type": "string"}}}}}}}},
+             lambda d: d["paths"]["/x"]["get"]["responses"]["200"]["schema"]["items"], "[]"),
+            ({"swagger": "2.0", "paths": {"/x": {"get": {"responses": {"200": {"description": "ok", "schema": {"type": "object", "additionalProperties": {"type": "string"}}}}}}}},
+             lambda d: d["paths"]["/x"]["get"]["responses"]["200"]["schema"]["additionalProperties"], "{}"),
+        ]
+        for old, getter, expected in cases:
+            with self.subTest(expected=expected):
+                found = [c for c in compare(old, swap(old, getter)) if c.rule == "D006"]
+                self.assertEqual(len(found), 1)
+                self.assertIn(expected, found[0].detail)
+
+    def test_every_media_type_is_compared(self):
+        old = {"openapi": "3.0.3", "paths": {"/x": {"get": {"responses": {"200": {"description": "ok", "content": {
+            "application/json": {"schema": {"type": "object"}},
+            "application/xml": {"schema": {"type": "object", "properties": {"x": {"type": "string"}}}}}}}}}}}
+        new = copy.deepcopy(old)
+        new["paths"]["/x"]["get"]["responses"]["200"]["content"]["application/xml"]["schema"]["properties"]["x"]["type"] = "integer"
+        self.assertEqual([c.rule for c in compare(old, new)], ["D006"])
+
+    def test_allof_branch_order_does_not_change_requirements(self):
+        required = {"type": "object", "properties": {"x": {"type": "string"}}, "required": ["x"]}
+        loose = {"type": "object", "properties": {"x": {"type": "string"}}}
+        def doc(branches):
+            return {"openapi": "3.0.3", "paths": {"/x": {"post": {"requestBody": {"content": {"application/json": {"schema": {"allOf": branches}}}}, "responses": {}}}}}
+        self.assertEqual(compare(doc([required, loose]), doc([loose, required])), [])
+        self.assertEqual(compare(doc([required, loose]), doc([required])), [])
+
+    def test_trace_operation_is_walked(self):
+        old = {"openapi": "3.0.3", "paths": {"/x": {"trace": {"responses": {"200": {"description": "ok"}}}}}}
+        new = {"openapi": "3.0.3", "paths": {"/x": {}}}
+        self.assertEqual([c.rule for c in compare(old, new)], ["D002"])
 
     def test_removed_operation_with_path_kept(self):
         old = load(FIX / "offer-api.json")
@@ -137,6 +196,14 @@ class LoadAndCliTests(unittest.TestCase):
             bad.write_text('{"hello": 1}', encoding="utf-8")
             with self.assertRaises(SentinelError):
                 load(bad)
+
+    def test_malformed_parameters_give_a_readable_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bad = Path(tmp) / "x.json"
+            bad.write_text('{"openapi": "3.0.3", "paths": {"/x": {"get": {"parameters": "q", "responses": {}}}}}', encoding="utf-8")
+            code, _, err = self.run_cli("lint", str(bad))
+        self.assertEqual(code, 2)
+        self.assertIn("must be a list", err)
 
     def test_rejects_broken_json_and_missing_file(self):
         with tempfile.TemporaryDirectory() as tmp:
