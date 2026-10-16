@@ -49,7 +49,7 @@ Options : `--lang en|fr`, `--format text|json|md`, et pour `lint` `--fail-on err
 - Contrôles statiques du fichier de description uniquement. Rien n'est appelé : le comportement d'un service en marche n'est pas testé.
 - Swagger 2.0 et OpenAPI 3.x sont lus ; seules les références `$ref` locales sont suivies.
 - Les conventions sont des observations sur cinq fichiers publics, résumées dans [docs/conventions.fr.md](docs/conventions.fr.md). C'est un point de départ, pas une norme. Sur ces cinq mêmes fichiers, l'outil signale cinq schémas (`Addressable` deux fois, `EntityValue`, `Place`, `Service`) qui portent un `href` sans `@type`, et rien d'autre.
-- `diff` compare les propriétés d'objets (y compris imbriquées), pas les variantes `oneOf` ni les valeurs d'énumération.
+- `diff` compare les propriétés d'objets (y compris imbriquées), pas les variantes `oneOf` ni les valeurs d'énumération. Un champ retiré d'un corps de requête n'est pas signalé, bien qu'un serveur strict puisse rejeter les appelants qui l'envoient encore.
 
 ## Tests
 

@@ -30,6 +30,10 @@ Les cinq sont des fichiers Swagger 2.0. La mention de licence vaut pour ces dép
 
 Les schémas de charge d'événement (noms finissant par `Event`) ne suivent pas le motif d'entité dans ces fichiers, donc S004 les ignore. Lancé sur les cinq fichiers, l'outil renvoie cinq avertissements S004 (`Addressable` dans deux fichiers, `EntityValue`, `Place`, `Service`) et rien d'autre : les règles sont aussi strictes que les fichiers eux-mêmes, pas plus.
 
+## Une comparaison réelle
+
+`diff` entre [TMF620 4.0.0](https://github.com/tmforum-apis/TMF620_ProductCatalog/blob/24e69f3026f2b514baa27d7206540fc7b55bcb45/TMF620-ProductCatalog-v4.0.0.swagger.json) et 4.1.0 (même commit) ne signale aucune rupture, lu le 2026-10-16. Une comparaison brute indépendante des deux fichiers JSON concorde : aucun chemin supprimé, aucun type de propriété modifié, et les 38 propriétés disparues sont toutes dans des schémas de requête dont le nom finit par `_Update`, que `diff` ne signale volontairement pas.
+
 ## Ce que cela n'établit pas
 
 Une règle réussie ne montre pas la conformité à une spécification, et une règle en échec ne montre pas qu'une API a tort. Les versions plus récentes de ces API peuvent différer. Consultez la publication officielle pour ce qui s'applique à votre cas.

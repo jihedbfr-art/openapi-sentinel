@@ -49,7 +49,7 @@ Options: `--lang en|fr`, `--format text|json|md`, and for `lint` `--fail-on erro
 - Static checks on the description file only. Nothing is called, so behaviour of a running service is not tested.
 - Swagger 2.0 and OpenAPI 3.x are read; only local `$ref` pointers are followed.
 - The conventions are observations from five public files, summarised in [docs/conventions.md](docs/conventions.md). They are a starting point, not a standard. Run on those same five files, the tool reports five schemas (`Addressable` twice, `EntityValue`, `Place`, `Service`) that carry an `href` without an `@type`, and nothing else.
-- `diff` compares top-level and nested object properties, not `oneOf` variants or enum values.
+- `diff` compares top-level and nested object properties, not `oneOf` variants or enum values. A field removed from a request body is not reported, although a strict server may reject callers that still send it.
 
 ## Tests
 

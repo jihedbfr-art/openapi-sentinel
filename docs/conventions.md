@@ -30,6 +30,10 @@ All five are Swagger 2.0 files. The licence statement applies to those repositor
 
 Event payload schemas (names ending in `Event`) do not follow the entity pattern in these files, so S004 skips them. Running the tool on the five files returns five S004 warnings (`Addressable` in two files, `EntityValue`, `Place`, `Service`) and nothing else: the rules are as strict as the files themselves, no stricter.
 
+## A real comparison
+
+`diff` between [TMF620 4.0.0](https://github.com/tmforum-apis/TMF620_ProductCatalog/blob/24e69f3026f2b514baa27d7206540fc7b55bcb45/TMF620-ProductCatalog-v4.0.0.swagger.json) and 4.1.0 (same commit) reports no breaking change, read 2026-10-16. A separate raw comparison of the two JSON files agrees: no path removed, no property type changed, and the 38 properties that disappeared are all in request schemas whose names end in `_Update`, which `diff` deliberately does not report.
+
 ## What this does not establish
 
 A rule that passes does not show conformance to any specification, and a rule that fails does not show an API is wrong. Newer versions of these APIs may differ. Check the official publication for what applies to your case.
