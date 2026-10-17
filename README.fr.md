@@ -63,6 +63,10 @@ python -m unittest discover -s tests
 
 Des fonctions de règles peuvent être ajoutées de l'extérieur par le groupe de points d'entrée `openapi_sentinel.rule_packs` ; voir [docs/extending.fr.md](docs/extending.fr.md).
 
+## Parcours d'étude
+
+Les idées derrière ces contrôles sont expliquées, avec sources et exercices, dans le parcours d'étude bilingue [oda-learning-lab](https://github.com/jihedbfr-art/oda-learning-lab/blob/main/docs/fr/04-les-open-apis-en-pratique.md) (module 4).
+
 ## Licence et contact
 
 Code : [Apache License 2.0](LICENSE). Des fonctions avancées peuvent être discutées sur demande : voir [COMMERCIAL.fr.md](COMMERCIAL.fr.md).
