@@ -7,6 +7,7 @@ from importlib import metadata
 from .core import SentinelError, load
 from .diff import compare
 from .rules import ERROR, WARN, lint
+from .sarif import report
 
 PACK_GROUP = "openapi_sentinel.rule_packs"  # extension point: installed packs may add rule functions
 
@@ -29,7 +30,9 @@ def _extra_rules():
 
 
 def _emit_lint(findings, args):
-    if args.format == "json":
+    if args.format == "sarif":
+        print(json.dumps(report(findings, args.file, args.lang), ensure_ascii=False, indent=2))
+    elif args.format == "json":
         print(json.dumps([{"rule": f.rule, "severity": f.severity, "where": f.where,
                            "message": f.message(args.lang)} for f in findings], ensure_ascii=False, indent=2))
     elif args.format == "md":
@@ -44,7 +47,9 @@ def _emit_lint(findings, args):
 
 
 def _emit_diff(changes, args):
-    if args.format == "json":
+    if args.format == "sarif":
+        print(json.dumps(report(changes, args.new, args.lang, old=args.old), ensure_ascii=False, indent=2))
+    elif args.format == "json":
         print(json.dumps([{"rule": c.rule, "where": c.where, "detail": c.detail,
                            "message": c.message(args.lang)} for c in changes], ensure_ascii=False, indent=2))
     elif args.format == "md":
@@ -61,7 +66,7 @@ def _emit_diff(changes, args):
 def main(argv=None):
     parser = argparse.ArgumentParser(prog="openapi-sentinel", description="Lint and compare OpenAPI/Swagger descriptions. Offline, no network.")
     parser.add_argument("--lang", choices=("en", "fr"), default="en")
-    parser.add_argument("--format", choices=("text", "json", "md"), default="text")
+    parser.add_argument("--format", choices=("text", "json", "md", "sarif"), default="text")
     sub = parser.add_subparsers(dest="command", required=True)
     p_lint = sub.add_parser("lint", help="check conventions")
     p_lint.add_argument("file")
