@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openapi-sentinel"
-version = "0.1.2"
+version = "0.2.0"
 description = "Offline lint and breaking-change check for OpenAPI/Swagger descriptions, with telecom-style conventions."
 readme = "README.md"
 requires-python = ">=3.10"

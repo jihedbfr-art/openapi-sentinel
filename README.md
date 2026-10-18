@@ -27,7 +27,46 @@ PYTHONPATH=src python -m openapi_sentinel diff fixtures/offer-api-v1.json fixtur
 
 Or install it (`pip install .`) and use the `openapi-sentinel` command. JSON files work out of the box; YAML needs `pip install pyyaml`.
 
-Options: `--lang en|fr` (messages and report labels; `--help` stays in English), `--format text|json|md`, and for `lint` `--fail-on error|warn|never` (default `error`). Exit codes: `lint` returns `0` when no finding reaches the `--fail-on` level (warnings and infos may still be printed) and `1` otherwise; `diff` returns `0` when it finds no breaking change and `1` otherwise; `2` means unreadable or malformed input.
+Options: `--lang en|fr` (messages and report labels; `--help` stays in English), `--format text|json|md|sarif`, and for `lint` `--fail-on error|warn|never` (default `error`). Exit codes: `lint` returns `0` when no finding reaches the `--fail-on` level (warnings and infos may still be printed) and `1` otherwise; `diff` returns `0` when it finds no breaking change and `1` otherwise; `2` means unreadable or malformed input.
+
+## SARIF reports
+
+Use `--format sarif` before `lint` or `diff` to write SARIF 2.1.0 JSON to stdout:
+
+```bash
+PYTHONPATH=src python -m openapi_sentinel --format sarif lint fixtures/offer-api-weak.json > results.sarif
+PYTHONPATH=src python -m openapi_sentinel --lang fr --format sarif diff fixtures/offer-api-v1.json fixtures/offer-api-v2.json > changes.sarif
+```
+
+The report includes all core rule descriptions in English and one result per finding, with messages in the requested language. `error`, `warn` and `info` become `error`, `warning` and `note`; every diff result is an `error`. An empty report has an empty `results` array. Exit codes and `--fail-on` keep their existing meaning.
+
+Locations contain an encoded file URI and the finding's logical path, without guessed line numbers. Paths inside the current working directory are relative; external files retain an absolute file URI. Run from the repository root for portable uploads. Removed paths, operations, responses and fields point to the old file; new requirements and changed types point to the new file. Keep both descriptions in the checkout for a diff upload. External rule packs receive a generic English rule description and retain their own result messages.
+
+The following is a **copyable job fragment**, not an installed workflow. It assumes Python 3.10+ and this repository's source layout; adapt the input path to your repository. The upload still runs after findings (exit 1), while the check remains failed. Input errors (exit 2) fail the check and skip upload. For diff reports use the diff command and a separate category such as `openapi-sentinel-diff`.
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+steps:
+  - uses: actions/checkout@v6
+  - name: Check API
+    id: sentinel
+    shell: bash
+    run: |
+      status=0
+      PYTHONPATH=src python -m openapi_sentinel --format sarif lint fixtures/offer-api-weak.json > results.sarif || status=$?
+      echo "status=$status" >> "$GITHUB_OUTPUT"
+      exit "$status"
+  - name: Upload SARIF
+    if: ${{ !cancelled() && (steps.sentinel.outputs.status == '0' || steps.sentinel.outputs.status == '1') }}
+    uses: github/codeql-action/upload-sarif@v4
+    with:
+      sarif_file: results.sarif
+      category: openapi-sentinel-lint
+```
+
+GitHub documents the upload action and required permissions in [Uploading a SARIF file](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file) (consulted 2026-10-18). The output follows the [OASIS SARIF 2.1.0 schema](https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json) (consulted 2026-10-18). Local schema validation does not confirm acceptance by a hosted code scanning service; no live upload was performed for this change.
 
 ## What it checks
 
@@ -57,7 +96,7 @@ Options: `--lang en|fr` (messages and report labels; `--help` stays in English),
 python -m unittest discover -s tests
 ```
 
-28 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
+38 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
 
 ## Extending
 

@@ -27,7 +27,46 @@ PYTHONPATH=src python -m openapi_sentinel --lang fr diff fixtures/offer-api-v1.j
 
 Ou installez-le (`pip install .`) et utilisez la commande `openapi-sentinel`. Le JSON fonctionne tel quel ; le YAML demande `pip install pyyaml`.
 
-Options : `--lang en|fr` (messages et libellés du rapport ; `--help` reste en anglais), `--format text|json|md`, et pour `lint` `--fail-on error|warn|never` (défaut `error`). Codes de sortie : `lint` renvoie `0` quand aucun constat n'atteint le niveau `--fail-on` (des avertissements et infos peuvent quand même s'afficher) et `1` sinon ; `diff` renvoie `0` sans rupture et `1` sinon ; `2` signifie entrée illisible ou mal formée.
+Options : `--lang en|fr` (messages et libellés du rapport ; `--help` reste en anglais), `--format text|json|md|sarif`, et pour `lint` `--fail-on error|warn|never` (défaut `error`). Codes de sortie : `lint` renvoie `0` quand aucun constat n'atteint le niveau `--fail-on` (des avertissements et infos peuvent quand même s'afficher) et `1` sinon ; `diff` renvoie `0` sans rupture et `1` sinon ; `2` signifie entrée illisible ou mal formée.
+
+## Rapports SARIF
+
+Placez `--format sarif` avant `lint` ou `diff` pour écrire du JSON SARIF 2.1.0 sur la sortie standard :
+
+```bash
+PYTHONPATH=src python -m openapi_sentinel --format sarif lint fixtures/offer-api-weak.json > results.sarif
+PYTHONPATH=src python -m openapi_sentinel --lang fr --format sarif diff fixtures/offer-api-v1.json fixtures/offer-api-v2.json > changes.sarif
+```
+
+Le rapport contient les descriptions de toutes les règles internes en anglais et un résultat par constat, avec les messages dans la langue demandée. `error`, `warn` et `info` deviennent `error`, `warning` et `note` ; chaque résultat de diff porte le niveau `error`. Sans constat, le tableau `results` est vide. Les codes de sortie et `--fail-on` gardent leur sens actuel.
+
+Les localisations contiennent une URI de fichier encodée et le chemin logique du constat, sans numéro de ligne inventé. Les fichiers dans le répertoire courant ont un chemin relatif ; les fichiers externes conservent une URI absolue. Lancez la commande à la racine du dépôt pour un téléversement portable. Les chemins, opérations, réponses et champs supprimés pointent vers l'ancien fichier ; les nouvelles obligations et les types modifiés vers le nouveau. Conservez les deux descriptions dans le checkout pour téléverser un diff. Les règles externes reçoivent une description générique en anglais et gardent leurs propres messages de résultat.
+
+Voici un **fragment de job à copier**, pas un workflow installé. Il suppose Python 3.10+ et l'organisation des sources de ce dépôt ; adaptez le chemin d'entrée. Le téléversement reste exécuté après des constats (code 1), mais le contrôle reste en échec. Une erreur d'entrée (code 2) fait échouer le contrôle et empêche le téléversement. Pour un diff, utilisez la commande diff et une catégorie distincte comme `openapi-sentinel-diff`.
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+steps:
+  - uses: actions/checkout@v6
+  - name: Check API
+    id: sentinel
+    shell: bash
+    run: |
+      status=0
+      PYTHONPATH=src python -m openapi_sentinel --format sarif lint fixtures/offer-api-weak.json > results.sarif || status=$?
+      echo "status=$status" >> "$GITHUB_OUTPUT"
+      exit "$status"
+  - name: Upload SARIF
+    if: ${{ !cancelled() && (steps.sentinel.outputs.status == '0' || steps.sentinel.outputs.status == '1') }}
+    uses: github/codeql-action/upload-sarif@v4
+    with:
+      sarif_file: results.sarif
+      category: openapi-sentinel-lint
+```
+
+GitHub décrit l'action et les permissions requises dans [Téléverser un fichier SARIF](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/integrate-with-existing-tools/upload-sarif-file) (consulté le 18 octobre 2026). La sortie suit le [schéma OASIS SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/os/schemas/sarif-schema-2.1.0.json) (consulté le 18 octobre 2026). La validation locale du schéma ne confirme pas l'acceptation par un service hébergé d'analyse de code ; aucun téléversement réel n'a été effectué pour ce changement.
 
 ## Ce qui est contrôlé
 
@@ -57,7 +96,7 @@ Options : `--lang en|fr` (messages et libellés du rapport ; `--help` reste en a
 python -m unittest discover -s tests
 ```
 
-28 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
+38 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
 
 ## Étendre
 
