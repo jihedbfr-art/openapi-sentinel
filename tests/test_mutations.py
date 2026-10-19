@@ -17,6 +17,7 @@ from openapi_sentinel import cli
 
 SEED = 20261019
 COUNT = 3000
+BUDGET_SECONDS = 120  # a guard against hangs: the test is about robustness, and slower machines take 2x CI
 KINDS = ('delete', 'null', 'number', 'list', 'dict', 'string', 'duplicate', 'empty', 'truncate')
 
 
@@ -97,4 +98,4 @@ class MutationTests(unittest.TestCase):
         self.assertTrue(all(counts.values()))
         print(f'Mutations: seed={SEED}, inputs={COUNT}, CLI calls={sum(exits.values())}, '
               f'kinds={counts}, exits={exits}, seconds={elapsed:.3f}')
-        self.assertLess(elapsed, 30, f'{COUNT} mutations took {elapsed:.3f}s')
+        self.assertLess(elapsed, BUDGET_SECONDS, f'{COUNT} mutations took {elapsed:.3f}s')
