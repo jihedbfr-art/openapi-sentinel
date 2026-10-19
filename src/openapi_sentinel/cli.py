@@ -1,5 +1,6 @@
 """Command line: openapi-sentinel lint FILE | diff OLD NEW."""
 import argparse
+from functools import lru_cache
 import json
 import sys
 from importlib import metadata
@@ -31,7 +32,7 @@ def _extra_rules():
 
 def _emit_lint(findings, args):
     if args.format == "sarif":
-        print(json.dumps(report(findings, args.file, args.lang), ensure_ascii=False, indent=2))
+        print(json.dumps(report(findings, args.file, args.lang), ensure_ascii=False))
     elif args.format == "json":
         print(json.dumps([{"rule": f.rule, "severity": f.severity, "where": f.where,
                            "message": f.message(args.lang)} for f in findings], ensure_ascii=False, indent=2))
@@ -48,7 +49,7 @@ def _emit_lint(findings, args):
 
 def _emit_diff(changes, args):
     if args.format == "sarif":
-        print(json.dumps(report(changes, args.new, args.lang, old=args.old), ensure_ascii=False, indent=2))
+        print(json.dumps(report(changes, args.new, args.lang, old=args.old), ensure_ascii=False))
     elif args.format == "json":
         print(json.dumps([{"rule": c.rule, "where": c.where, "detail": c.detail,
                            "message": c.message(args.lang)} for c in changes], ensure_ascii=False, indent=2))
@@ -63,7 +64,8 @@ def _emit_diff(changes, args):
             print(LABELS[args.lang]["none_diff"])
 
 
-def main(argv=None):
+@lru_cache(maxsize=1)
+def _parser():
     parser = argparse.ArgumentParser(prog="openapi-sentinel", description="Lint and compare OpenAPI/Swagger descriptions. Offline, no network.")
     parser.add_argument("--lang", choices=("en", "fr"), default="en")
     parser.add_argument("--format", choices=("text", "json", "md", "sarif"), default="text")
@@ -74,6 +76,11 @@ def main(argv=None):
     p_diff = sub.add_parser("diff", help="list breaking changes between two versions")
     p_diff.add_argument("old")
     p_diff.add_argument("new")
+    return parser
+
+
+def main(argv=None):
+    parser = _parser()
     args = parser.parse_args(argv)
     try:
         if args.command == "lint":

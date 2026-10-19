@@ -96,7 +96,9 @@ GitHub décrit l'action et les permissions requises dans [Téléverser un fichie
 python -m unittest discover -s tests
 ```
 
-38 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
+39 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
+
+Voir la [couverture des mutations](docs/mutations.fr.md) pour la graine fixe, les 3 000 entrées, les 9 000 appels et les limites.
 
 ## Étendre
 

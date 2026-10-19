@@ -2,6 +2,12 @@
 
 [Version française](CHANGELOG.fr.md)
 
+## 0.2.1
+
+Added a deterministic robustness check: 3,000 fixture mutations and 9,000 CLI calls across lint, diff in both directions, all four output formats and both languages. It covers key deletion, value replacement, list duplication, object clearing and JSON truncation, and requires readable errors without tracebacks. No unhandled exception was found in this corpus. See [mutation coverage](docs/mutations.md).
+
+Reuse the CLI parser and per-report file URIs; emit SARIF without indentation while preserving its JSON structure.
+
 ## 0.2.0
 
 Added SARIF 2.1.0 output for lint and diff, with translated result messages, English rule descriptions, file URIs and logical locations. Exit codes are unchanged. Both READMEs include a copyable upload example. 38 tests.
