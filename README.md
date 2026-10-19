@@ -96,7 +96,9 @@ GitHub documents the upload action and required permissions in [Uploading a SARI
 python -m unittest discover -s tests
 ```
 
-38 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
+39 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
+
+See [mutation coverage](docs/mutations.md) for the fixed seed, 3,000 inputs, 9,000 calls and limits.
 
 ## Extending
 

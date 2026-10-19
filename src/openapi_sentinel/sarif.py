@@ -35,9 +35,12 @@ def report(findings, filename, lang="en", *, old=None):
     prefix = "D" if old is not None else "S"
     rules = {key: value for key, value in DESCRIPTIONS.items() if key.startswith(prefix)}
     results = []
+    uris = {}
     for finding in findings:
         rules.setdefault(finding.rule, "External rule " + finding.rule)
         source = old if old is not None and finding.rule in {"D001", "D002", "D004", "D005"} else filename
+        if source not in uris:
+            uris[source] = artifact_uri(source)
         logical = finding.where
         if old is not None and finding.detail:
             logical += " / " + finding.detail
@@ -46,7 +49,7 @@ def report(findings, filename, lang="en", *, old=None):
             "level": "error" if old is not None else LEVELS[finding.severity],
             "message": {"text": finding.message(lang)},
             "locations": [{
-                "physicalLocation": {"artifactLocation": {"uri": artifact_uri(source)}},
+                "physicalLocation": {"artifactLocation": {"uri": uris[source]}},
                 "logicalLocations": [{"fullyQualifiedName": logical}],
             }],
         })
