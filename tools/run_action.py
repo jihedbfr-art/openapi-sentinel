@@ -37,6 +37,9 @@ def main():
             raise ValueError("report must end in .sarif")
         source = (workspace / spec).resolve()
         old = (workspace / baseline).resolve() if baseline else None
+        source.relative_to(workspace)
+        if old is not None:
+            old.relative_to(workspace)
         if report in (source, old):
             raise ValueError("report must not overwrite an input")
         arguments = ["--lang", language, "--format", "sarif", mode]

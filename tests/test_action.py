@@ -15,10 +15,10 @@ import run_action
 
 
 class ActionTests(unittest.TestCase):
-    def run_case(self, *, spec="offer-api.json", mode="lint", baseline="", language="en", fail_on="error", report="report.sarif", content=None):
+    def run_case(self, *, spec="offer-api.json", mode="lint", baseline="", language="en", fail_on="error", report="report.sarif", content=None, input_name="input.json"):
         with tempfile.TemporaryDirectory() as directory:
             workspace = Path(directory)
-            source = workspace / "input.json"
+            source = workspace / input_name
             source.write_text((ROOT / "fixtures" / spec).read_text(encoding="utf-8") if content is None else content, encoding="utf-8")
             old = workspace / "old.json"
             if baseline:
@@ -27,8 +27,26 @@ class ActionTests(unittest.TestCase):
             environment = {"GITHUB_WORKSPACE": str(workspace), "GITHUB_OUTPUT": str(output), "SENTINEL_SPEC": str(source), "SENTINEL_MODE": mode, "SENTINEL_BASELINE": str(old) if baseline else "", "SENTINEL_LANG": language, "SENTINEL_FAIL_ON": fail_on, "SENTINEL_REPORT": report}
             with patch.dict(os.environ, environment), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 code = run_action.main()
-            data = json.loads((workspace / report).read_text(encoding="utf-8")) if (workspace / report).is_file() and report != "input.json" else None
+            data = json.loads((workspace / report).read_text(encoding="utf-8")) if (workspace / report).is_file() and report != input_name else None
             return code, data, output.read_text(encoding="utf-8"), source.read_text(encoding="utf-8")
+
+    def test_input_names_with_spaces_and_metacharacters_are_literal(self):
+        self.assertEqual(self.run_case(input_name="api; echo injected.json")[0], 0)
+
+    def test_inputs_cannot_read_outside_workspace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            workspace = root / "workspace"
+            workspace.mkdir()
+            outside = root / "outside.json"
+            inside = workspace / "inside.json"
+            for target in (inside, outside):
+                target.write_bytes((ROOT / "fixtures" / "offer-api.json").read_bytes())
+            for mode in ("lint", "diff"):
+                with self.subTest(mode=mode):
+                    environment = {"GITHUB_WORKSPACE": str(workspace), "GITHUB_OUTPUT": str(workspace / "outputs.txt"), "SENTINEL_SPEC": str(outside if mode == "lint" else inside), "SENTINEL_MODE": mode, "SENTINEL_BASELINE": str(outside), "SENTINEL_REPORT": "report.sarif"}
+                    with patch.dict(os.environ, environment), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                        self.assertEqual(run_action.main(), 2)
 
     def test_valid_lint_produces_empty_sarif(self):
         code, report, outputs, _ = self.run_case()
@@ -72,7 +90,7 @@ class ActionTests(unittest.TestCase):
         self.assertEqual(self.run_case(mode="lint; echo injected")[0], 2)
 
     def test_report_cannot_overwrite_input(self):
-        code, _, _, source = self.run_case(report="input.json")
+        code, _, _, source = self.run_case(report="input.sarif", input_name="input.sarif")
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(source)["swagger"], "2.0")
 
