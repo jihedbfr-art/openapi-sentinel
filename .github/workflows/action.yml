@@ -1,0 +1,89 @@
+name: Composite action checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  action:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: sentinel-action
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Prepare a separate caller workspace
+        run: python -c "import shutil; shutil.copytree('sentinel-action/fixtures', 'consumer'); open('consumer/malformed.json', 'w').write('not JSON')"
+      - name: Lint valid description
+        id: valid
+        uses: ./sentinel-action
+        with:
+          spec: consumer/offer-api.json
+          report: reports/valid.sarif
+      - name: Lint weak description
+        id: weak
+        continue-on-error: true
+        uses: ./sentinel-action
+        with:
+          spec: consumer/offer-api-weak.json
+          lang: fr
+          report: reports/weak.sarif
+      - name: Compare breaking versions
+        id: breaking
+        continue-on-error: true
+        uses: ./sentinel-action
+        with:
+          mode: diff
+          baseline: consumer/offer-api-v1.json
+          spec: consumer/offer-api-v2.json
+          report: reports/breaking.sarif
+      - name: Reject malformed description
+        id: malformed
+        continue-on-error: true
+        uses: ./sentinel-action
+        with:
+          spec: consumer/malformed.json
+          report: reports/malformed.sarif
+      - name: Assert action outcomes and outputs
+        shell: bash
+        env:
+          VALID: ${{ steps.valid.outputs.exit-code }}
+          WEAK: ${{ steps.weak.outputs.exit-code }}
+          WEAK_OUTCOME: ${{ steps.weak.outcome }}
+          WEAK_FINDINGS: ${{ steps.weak.outputs.findings }}
+          WEAK_REPORT: ${{ steps.weak.outputs.sarif-file }}
+          BREAKING: ${{ steps.breaking.outputs.exit-code }}
+          BREAKING_OUTCOME: ${{ steps.breaking.outcome }}
+          MALFORMED: ${{ steps.malformed.outputs.exit-code }}
+          MALFORMED_OUTCOME: ${{ steps.malformed.outcome }}
+          MALFORMED_REPORT: ${{ steps.malformed.outputs.sarif-file }}
+        run: |
+          test "$VALID" = "0"
+          test "$WEAK" = "1"
+          test "$WEAK_OUTCOME" = "failure"
+          test "$WEAK_FINDINGS" = "9"
+          test "$WEAK_REPORT" = "reports/weak.sarif"
+          test "$BREAKING" = "1"
+          test "$BREAKING_OUTCOME" = "failure"
+          test "$MALFORMED" = "2"
+          test "$MALFORMED_OUTCOME" = "failure"
+          test -z "$MALFORMED_REPORT"
+          test ! -e reports/malformed.sarif
+      - name: Retain generated reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: action-sarif-${{ matrix.os }}
+          path: reports/*.sarif
