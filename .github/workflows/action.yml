@@ -25,12 +25,12 @@ jobs:
         with:
           python-version: "3.12"
       - name: Prepare a separate caller workspace
-        run: python -c "import shutil; shutil.copytree('sentinel-action/fixtures', 'consumer'); open('consumer/malformed.json', 'w').write('not JSON')"
+        run: python -c "import shutil; shutil.copytree('sentinel-action/fixtures', 'consumer'); shutil.copyfile('consumer/offer-api.json', 'consumer/offer-api.yaml'); open('consumer/malformed.json', 'w').write('not JSON')"
       - name: Lint valid description
         id: valid
         uses: ./sentinel-action
         with:
-          spec: consumer/offer-api.json
+          spec: consumer/offer-api.yaml
           report: reports/valid.sarif
       - name: Lint weak description
         id: weak

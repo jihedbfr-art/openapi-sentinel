@@ -29,6 +29,10 @@ Or install it (`pip install .`) and use the `openapi-sentinel` command. JSON fil
 
 Options: `--lang en|fr` (messages and report labels; `--help` stays in English), `--format text|json|md|sarif`, and for `lint` `--fail-on error|warn|never` (default `error`). Exit codes: `lint` returns `0` when no finding reaches the `--fail-on` level (warnings and infos may still be printed) and `1` otherwise; `diff` returns `0` when it finds no breaking change and `1` otherwise; `2` means unreadable or malformed input.
 
+## GitHub Action
+
+Run lint or diff in a PR with a SARIF report: [complete examples and limits](docs/github-action.md). The proposed action preserves failing checks and exposes outputs for retaining the report. Examples pin a commit; no stable tag or Marketplace listing is claimed.
+
 ## SARIF reports
 
 Use `--format sarif` before `lint` or `diff` to write SARIF 2.1.0 JSON to stdout:
@@ -96,7 +100,7 @@ GitHub documents the upload action and required permissions in [Uploading a SARI
 python -m unittest discover -s tests
 ```
 
-39 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
+53 tests, standard library only. Fixtures are invented APIs in `fixtures/`.
 
 See [mutation coverage](docs/mutations.md) for the fixed seed, 3,000 inputs, 9,000 calls and limits.
 

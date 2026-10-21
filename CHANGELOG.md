@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Composite GitHub Action for lint/diff and SARIF reports, with an isolated Python environment and workspace path checks.
+- Runner tests and Ubuntu/Windows integration workflow; EN/FR guide with commit-pinned examples.
+
 [Version française](CHANGELOG.fr.md)
 
 ## 0.2.1

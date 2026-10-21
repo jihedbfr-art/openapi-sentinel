@@ -1,5 +1,10 @@
 # Historique
 
+## Non publié
+
+- Action GitHub composite pour lint/diff et rapports SARIF, avec environnement Python isolé et contrôle des chemins du workspace.
+- Tests du runner et workflow d’intégration Ubuntu/Windows ; guide EN/FR avec exemples fixés à un commit.
+
 [English version](CHANGELOG.md)
 
 ## 0.2.1
