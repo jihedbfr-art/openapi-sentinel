@@ -6,7 +6,7 @@ Run lint or compare two OpenAPI descriptions in a pull request. The action write
 
 ## Lint example
 
-Replace `api/openapi.yaml` with your project's file. This example pins a specific commit of the proposed implementation; it assumes neither a `v1` tag nor a Marketplace listing.
+Replace `api/openapi.yaml` with your project's file. This example pins a specific commit of the merged implementation; it assumes neither a `v1` tag nor a Marketplace listing.
 
 ```yaml
 name: Check API
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check description
         id: sentinel
-        uses: jihedbfr-art/openapi-sentinel@e56da3a2592821540f9a5c25f2530cc7b01fcda6
+        uses: jihedbfr-art/openapi-sentinel@cdef50117cae0396ef48dd0c4be6af796d303010
         with:
           spec: api/openapi.yaml
           fail-on: warn
@@ -41,7 +41,7 @@ Both descriptions must be present in the checkout. The action does not fetch a b
 ```yaml
 - name: Detect breaking changes
   id: sentinel
-  uses: jihedbfr-art/openapi-sentinel@e56da3a2592821540f9a5c25f2530cc7b01fcda6
+  uses: jihedbfr-art/openapi-sentinel@cdef50117cae0396ef48dd0c4be6af796d303010
   with:
     mode: diff
     baseline: api/old.yaml

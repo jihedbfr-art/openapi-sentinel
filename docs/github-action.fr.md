@@ -6,7 +6,7 @@ Exécuter le lint ou comparer deux descriptions OpenAPI dans une pull request. L
 
 ## Exemple de lint
 
-Adapter `api/openapi.yaml` au fichier du projet. Cet exemple référence un commit précis de l’implémentation proposée ; il ne suppose ni tag `v1` ni publication Marketplace.
+Adapter `api/openapi.yaml` au fichier du projet. Cet exemple référence un commit précis de l’implémentation fusionnée ; il ne suppose ni tag `v1` ni publication Marketplace.
 
 ```yaml
 name: Check API
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check description
         id: sentinel
-        uses: jihedbfr-art/openapi-sentinel@e56da3a2592821540f9a5c25f2530cc7b01fcda6
+        uses: jihedbfr-art/openapi-sentinel@cdef50117cae0396ef48dd0c4be6af796d303010
         with:
           spec: api/openapi.yaml
           fail-on: warn
@@ -41,7 +41,7 @@ Les deux descriptions doivent être présentes dans le checkout. L’Action ne r
 ```yaml
 - name: Detect breaking changes
   id: sentinel
-  uses: jihedbfr-art/openapi-sentinel@e56da3a2592821540f9a5c25f2530cc7b01fcda6
+  uses: jihedbfr-art/openapi-sentinel@cdef50117cae0396ef48dd0c4be6af796d303010
   with:
     mode: diff
     baseline: api/old.yaml
