@@ -1,0 +1,61 @@
+name: OpenAPI Sentinel
+description: Offline OpenAPI lint and breaking-change checks with SARIF reports.
+author: Jihed Ben Arfa
+branding:
+  icon: shield
+  color: blue
+inputs:
+  mode:
+    description: lint or diff
+    default: lint
+  spec:
+    description: Specification to lint, or new specification for diff; relative to the caller workspace
+    required: true
+  baseline:
+    description: Old specification for diff; relative to the caller workspace
+  lang:
+    description: Report language, en or fr
+    default: en
+  fail-on:
+    description: Lint failure threshold, error, warn or never; ignored for diff
+    default: error
+  report:
+    description: SARIF output path inside the caller workspace
+    default: openapi-sentinel.sarif
+outputs:
+  exit-code:
+    description: 0 for a passing check, 1 for findings reaching the threshold, 2 for input or execution errors
+    value: ${{ steps.check.outputs.exit-code }}
+  sarif-file:
+    description: Workspace-relative path of the report generated on exit 0 or 1
+    value: ${{ steps.check.outputs.sarif-file }}
+  findings:
+    description: Number of SARIF results, including findings below the failure threshold
+    value: ${{ steps.check.outputs.findings }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install and check
+      id: check
+      shell: bash
+      env:
+        ACTION_ROOT: ${{ github.action_path }}
+        SENTINEL_MODE: ${{ inputs.mode }}
+        SENTINEL_SPEC: ${{ inputs.spec }}
+        SENTINEL_BASELINE: ${{ inputs.baseline }}
+        SENTINEL_LANG: ${{ inputs.lang }}
+        SENTINEL_FAIL_ON: ${{ inputs.fail-on }}
+        SENTINEL_REPORT: ${{ inputs.report }}
+      run: |
+        action_env="$(mktemp -d "$RUNNER_TEMP/openapi-sentinel.XXXXXX")"
+        python -m venv "$action_env"
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          action_python="$action_env/Scripts/python.exe"
+        else
+          action_python="$action_env/bin/python"
+        fi
+        "$action_python" -m pip install "$ACTION_ROOT[yaml]"
+        "$action_python" -I -X utf8 "$ACTION_ROOT/tools/run_action.py"

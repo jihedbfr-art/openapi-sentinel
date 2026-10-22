@@ -29,6 +29,10 @@ Ou installez-le (`pip install .`) et utilisez la commande `openapi-sentinel`. Le
 
 Options : `--lang en|fr` (messages et libellés du rapport ; `--help` reste en anglais), `--format text|json|md|sarif`, et pour `lint` `--fail-on error|warn|never` (défaut `error`). Codes de sortie : `lint` renvoie `0` quand aucun constat n'atteint le niveau `--fail-on` (des avertissements et infos peuvent quand même s'afficher) et `1` sinon ; `diff` renvoie `0` sans rupture et `1` sinon ; `2` signifie entrée illisible ou mal formée.
 
+## Action GitHub
+
+Lancer lint ou diff dans une PR avec un rapport SARIF : [exemples complets et limites](docs/github-action.fr.md). L’Action proposée conserve l’échec sur les constats et fournit des sorties pour conserver le rapport. Les exemples sont fixés à un commit ; aucun tag stable ni publication Marketplace n’est annoncé.
+
 ## Rapports SARIF
 
 Placez `--format sarif` avant `lint` ou `diff` pour écrire du JSON SARIF 2.1.0 sur la sortie standard :
@@ -96,7 +100,7 @@ GitHub décrit l'action et les permissions requises dans [Téléverser un fichie
 python -m unittest discover -s tests
 ```
 
-39 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
+53 tests, bibliothèque standard uniquement. Les jeux d'essai sont des API inventées dans `fixtures/`.
 
 Voir la [couverture des mutations](docs/mutations.fr.md) pour la graine fixe, les 3 000 entrées, les 9 000 appels et les limites.
 
